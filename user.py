@@ -20,9 +20,11 @@ class User(object):
 	def send(self, message):
 		if self.socket.fileno() != -1: # fileno() returns -1 for dead sockets
 			canonical_type = type(message)
-			if canonical_type is str:
-				self.socket.send(bytes(message, 'utf-8'))
-			elif canonical_type is bytes:
-				self.socket.send(message)
+			data = bytes(message, 'utf-8') if canonical_type is str else message
+			try:
+				self.socket.send(data)
+			except Exception as err:
+				print("Error while sending data to %s: %s"%(self.username, err))
+				self.socket.close()
 		else:
 			print("%s's socket is dead..."%self.username)

@@ -15,4 +15,4 @@ class PrivateRoom(object):
 			self.left_user.send(message)
 			self.right_user.send(message)
 		else:
-			print("This room is not ready!")
+			print("This room is not ready (requested by: %s)!"%self.left_user.username)

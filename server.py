@@ -65,7 +65,7 @@ class ChatServer:
 	def private_room_timed_out(self, p_room):
 		# right_user has not replied left_user's request for a private chat room so far,
 		# therefore the server is going to delete the object ('the request/room') in order to save memory
-		if p_room.agreed_on is False:
+		if p_room.agreed_on is False and p_room in self.private_rooms:
 			print("Private Room requested by %s was not replied so it's being closed..."%p_room.left_user.username)
 			p_room.left_user.send("------- Seu pedido ainda não foi respondido e por isso será excluido -------")
 			p_room.right_user.send("------- Você não respondeu o pedido de %s para sala privada e, por isso, o pedido será excluído -------"%p_room.left_user.username)
@@ -133,7 +133,7 @@ class ChatServer:
 					target = self.get_request_target(msg)
 					print(self.connected_users)
 					if target == current_user:
-						current_user.send("Engraçadinho...")
+						current_user.send("Engraçadinh@...")
 						continue
 					if target:
 						if target.room_identifier != "Public":
@@ -145,7 +145,7 @@ class ChatServer:
 							current_user.room_identifier = "Pending"
 							p_room = PrivateRoom(current_user, target)
 							self.private_rooms.append(p_room)
-							room_timer = Timer(5.0, self.private_room_timed_out, args=[p_room])
+							room_timer = Timer(10.0, self.private_room_timed_out, args=[p_room])
 							room_timer.start()
 
 							confirmation_message = "%s deseja se conectar com você. \nPara aceitar, digite: aceito_privado(%s)\nPara recusar, digite: recuso_privado(%s)"%(current_user.username, current_user.username, current_user.username)
@@ -157,7 +157,8 @@ class ChatServer:
 						# Send error message back to the owner of the request
 						current_user.send("Este usuário não está conectado.")
 				continue
-
+			elif current_user.username == None:
+				continue
 			elif request == "recuso_privado":
 				target = self.get_request_target(msg) # Get target of the request
 				if target:
@@ -205,27 +206,27 @@ class ChatServer:
 
 
 			print(data)
-			if current_user.username is not None:
-				if current_user.room_identifier == "Private":
-					# Send message to private room
-					p_room = self.get_private_room(current_user)
-					if p_room is not None:
-						p_room.send(data)
-				else:
-					# Send message to everyone
-					for user in self.connected_users:
-						if user.room_identifier == "Public":
-							user.send(data)
+			if current_user.room_identifier == "Private":
+				# Send message to private room
+				p_room = self.get_private_room(current_user)
+				if p_room is not None:
+					p_room.send(data)
+			else:
+				# Send message to everyone
+				for user in self.connected_users:
+					if user.room_identifier == "Public":
+						user.send(data)
 
-				if not data:
-					self.user_disconnected(current_user)
-					break
+			if not data or current_user.socket.fileno() == -1:
+				self.user_disconnected(current_user)
+				break
 			
 	def run(self):
 
 		prompt_thread = threading.Thread(target = self.accept_connections)
 		prompt_thread.daemon = True
 		prompt_thread.start()
+		print("Servidor aceitando conexões...")
 
 		while True:
 			command = input()
