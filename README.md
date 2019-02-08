@@ -1,1 +1,3 @@
-# kivy_live_chat
+# Python 3 live chat
+
+// TODO: Documentation
